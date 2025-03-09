@@ -8,5 +8,6 @@ urlpatterns = [
     path('github-login/done/', GithubLoginDoneView.as_view(), name='github-login-done'), #The callback url
     path('repo-data/<str:owner>/<str:repo>/', GetRepoData.as_view(), name='repo-data'),
     path('all-repos/', GetAllReposView.as_view(), name='all-repos'),
+    path('repos/', GetAllReposView.as_view(), name='repos'),
     path('llama-response/', LlamaModelView.as_view(), name='llama-response'),
 ]

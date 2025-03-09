@@ -11,32 +11,28 @@ class GithubLoginView(APIView):
     def get(self, request, *args, **kwargs):
         return redirect('social:begin', backend='github')
 
+# class GithubLoginDoneView(APIView):
+#     def get(self, request, *args, **kwargs):
+#         user = request.user
+#         if user.is_authenticated:
+#             token, created = Token.objects.get_or_create(user=user)  # Correct way to get/create token
+#             return Response({'token': token.key})
+#         return Response({'error': 'Authentication failed'}, status=400)
+
+
 class GithubLoginDoneView(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         if user.is_authenticated:
-            token, created = Token.objects.get_or_create(user=user)  # Correct way to get/create token
-            return Response({'token': token.key})
+            token, created = Token.objects.get_or_create(user=user)
+            print(f'Token: {token.key}')  # Debugging to see if token is created
+            response = redirect('http://localhost:5173/repos')  # React frontend URL
+            response.set_cookie('token', token.key, samesite='None', secure=False)
+            return response
         return Response({'error': 'Authentication failed'}, status=400)
 
 
-# class GetRepoData(APIView):
-#     permission_classes = [IsAuthenticated]  # Protect this view
-#     def get(self, request, owner, repo):
-#         try:
-#             github_user = request.user.social_auth.get(provider='github')
-#             access_token = github_user.extra_data['access_token']
-#         except Exception as e:
-#             return Response({'error': 'Github account not linked'}, status=400)
 
-#         url = f'https://api.github.com/repos/{owner}/{repo}'
-#         headers = {'Authorization': f'token {access_token}'}
-
-#         response = requests.get(url, headers=headers)
-
-#         if response.status_code == 200:
-#             return Response(response.json())
-#         return Response({'error': 'Repo not found'}, status=response.status_code)
 
 class GetRepoData(APIView):
     permission_classes = [IsAuthenticated]  # Protect this view

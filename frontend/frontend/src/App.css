@@ -1,0 +1,37 @@
+/* src/App.css */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.repo-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px;
+}
+
+.repo-card {
+  border: 1px solid #ccc;
+  padding: 15px;
+  cursor: pointer;
+  border-radius: 8px;
+  width: 250px;
+}
+
+.repo-card:hover {
+  background-color: #f0f0f0;
+}
+
+.repo-content {
+  padding: 20px;
+}
+
+.repo-content pre {
+  background-color: #f7f7f7;
+  padding: 15px;
+  border-radius: 6px;
+  overflow-x: auto;
+}

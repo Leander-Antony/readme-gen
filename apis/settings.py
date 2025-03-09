@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'social_django',
     'readme',
+    'corsheaders',
 ]
 
 AUTHENTICATION_BACKENDS = (
@@ -65,7 +66,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True  # Allow credentials (cookies) to be sent with requests
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',  # Your frontend's URL
+]
+
 
 ROOT_URLCONF = 'apis.urls'
 
