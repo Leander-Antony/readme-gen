@@ -74,6 +74,8 @@ CORS_ALLOW_CREDENTIALS = True  # Allow credentials (cookies) to be sent with req
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',  # Your frontend's URL
 ]
+from corsheaders.defaults import default_headers
+CORS_ALLOW_HEADERS = list(default_headers) + ['Authorization']
 
 
 ROOT_URLCONF = 'apis.urls'
@@ -148,3 +150,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# DRF Authentication settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}

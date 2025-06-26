@@ -27,8 +27,9 @@ class GithubLoginDoneView(APIView):
             token, created = Token.objects.get_or_create(user=user)
             print(f'Token: {token.key}')  # Debugging to see if token is created
             response = redirect('http://localhost:5173/repos')  # React frontend URL
-            response.set_cookie('token', token.key, samesite='None', secure=False)
+            response = redirect(f'http://localhost:5173/repos?token={token.key}')
             return response
+
         return Response({'error': 'Authentication failed'}, status=400)
 
 
