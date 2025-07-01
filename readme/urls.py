@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import GithubLoginView, GetRepoData, GithubLoginDoneView,GetAllReposView, LlamaModelView
+from .views import GithubLoginView, GetRepoData, GithubLoginDoneView,GetAllReposView, LlamaModelView, CommitReadmeView
 
 urlpatterns = [
     path('auth/', include('social_django.urls', namespace='social')),  # Social Auth URLs
@@ -9,5 +9,7 @@ urlpatterns = [
     path('repo-data/<str:owner>/<str:repo>/', GetRepoData.as_view(), name='repo-data'),
     path('all-repos/', GetAllReposView.as_view(), name='all-repos'),
     path('repos/', GetAllReposView.as_view(), name='repos'),
-    path('llama-response/', LlamaModelView.as_view(), name='llama-response'),
+    path("llama-readme/", LlamaModelView.as_view(), name="llama-readme"),
+    path("commit-readme/<str:owner>/<str:repo>/", CommitReadmeView.as_view(), name="commit-readme"),
+
 ]

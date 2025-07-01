@@ -43,6 +43,7 @@ const RepoList = () => {
 
         if (response.data && response.data.length > 0) {
           setRepos(response.data);
+          console.log("Fetched repos:", response.description);
         } else {
           setErrorMessage("No repositories found.");
         }
@@ -77,7 +78,9 @@ const RepoList = () => {
               }}
             >
               <h3>{repo.name}</h3>
-              <p>{repo.description || "No description available"}</p>
+              <p>
+                {repo.description || `A mysterious repo named "${repo.name}"`}
+              </p>
             </div>
           ))
         : !errorMessage && <p>Loading repositories...</p>}

@@ -7,6 +7,9 @@ import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 const RepoContent = () => {
   const { owner, repo } = useParams();
   const [files, setFiles] = useState([]);
+  const [readme, setReadme] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [readmeEditable, setReadmeEditable] = useState("");
 
   useEffect(() => {
     const fetchRepoContent = async () => {
@@ -27,6 +30,38 @@ const RepoContent = () => {
     fetchRepoContent();
   }, [owner, repo]);
 
+  const generateReadme = async () => {
+    const token = localStorage.getItem("token");
+
+    const prompt = `Generate a professional README.md for the following project files:\n\n${files
+      .map((file) => `File: ${file.file_name}\nContent:\n${file.content}\n\n`)
+      .join("")}`;
+
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/llama-readme/",
+        { prompt },
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.response) {
+        setReadme(response.data.response);
+        setReadmeEditable(response.data.response);
+        setShowModal(true);
+      } else {
+        alert("Failed to generate README.");
+      }
+    } catch (error) {
+      console.error("Error generating README:", error);
+      alert("Error generating README");
+    }
+  };
+
   return (
     <div
       style={{
@@ -38,18 +73,41 @@ const RepoContent = () => {
         backgroundColor: "#121212",
         color: "#e0e0e0",
         minHeight: "100vh",
+        position: "relative",
       }}
     >
-      <h2
+      <div
         style={{
-          fontSize: "32px",
-          marginBottom: "30px",
-          borderBottom: "2px solid #333",
-          paddingBottom: "10px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        Repository: <span style={{ color: "#80d8ff" }}>{repo}</span>
-      </h2>
+        <h2
+          style={{
+            fontSize: "32px",
+            marginBottom: "30px",
+            borderBottom: "2px solid #333",
+            paddingBottom: "10px",
+          }}
+        >
+          Repository: <span style={{ color: "#80d8ff" }}>{repo}</span>
+        </h2>
+        <button
+          onClick={generateReadme}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "#80d8ff",
+            color: "#000",
+            fontWeight: "bold",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
+        >
+          Generate README
+        </button>
+      </div>
 
       {files.map((file, index) => (
         <div
@@ -91,6 +149,104 @@ const RepoContent = () => {
           </SyntaxHighlighter>
         </div>
       ))}
+
+      {showModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: "50px",
+            right: "50px",
+            width: "500px",
+            height: "70vh",
+            backgroundColor: "#1e1e1e",
+            color: "#e0e0e0",
+            border: "1px solid #444",
+            borderRadius: "10px",
+            zIndex: 9999,
+            boxShadow: "0 0 20px rgba(0,0,0,0.7)",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            style={{
+              padding: "10px 20px",
+              borderBottom: "1px solid #333",
+              backgroundColor: "#292929",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderTopLeftRadius: "10px",
+              borderTopRightRadius: "10px",
+            }}
+          >
+            <strong>📝 Edit README</strong>
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                background: "none",
+                color: "#fff",
+                border: "none",
+                fontSize: "20px",
+                cursor: "pointer",
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <textarea
+            value={readmeEditable}
+            onChange={(e) => setReadmeEditable(e.target.value)}
+            style={{
+              flex: 1,
+              padding: "15px",
+              backgroundColor: "#121212",
+              color: "#e0e0e0",
+              fontSize: "14px",
+              border: "none",
+              resize: "none",
+              outline: "none",
+              fontFamily: "monospace",
+              borderBottomLeftRadius: "10px",
+              borderBottomRightRadius: "10px",
+            }}
+          />
+          <button
+            onClick={async () => {
+              const token = localStorage.getItem("token");
+              try {
+                await axios.post(
+                  `http://127.0.0.1:8000/commit-readme/${owner}/${repo}/`,
+                  { content: readmeEditable },
+                  {
+                    headers: {
+                      Authorization: `Token ${token}`,
+                      "Content-Type": "application/json",
+                    },
+                  }
+                );
+                alert("README committed to GitHub!");
+                setShowModal(false);
+              } catch (error) {
+                console.error("Failed to commit README:", error);
+                alert("Error committing README");
+              }
+            }}
+            style={{
+              backgroundColor: "#80d8ff",
+              color: "#000",
+              padding: "10px",
+              fontWeight: "bold",
+              border: "none",
+              cursor: "pointer",
+              borderBottomLeftRadius: "10px",
+              borderBottomRightRadius: "10px",
+            }}
+          >
+            ✅ Set README to Repo
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -6,6 +6,8 @@ import requests
 from django.shortcuts import redirect
 from rest_framework.authtoken.models import Token # Import Token mod
 import ollama
+import base64
+import json
 
 class GithubLoginView(APIView):
     def get(self, request, *args, **kwargs):
@@ -35,46 +37,57 @@ class GithubLoginDoneView(APIView):
 
 
 
+def fetch_all_files_recursively(owner, repo, path, headers, collected_files):
+    url = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}'
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        return
+
+    ignored_dirs = {"node_modules", ".git", ".github", "dist", "build", "__pycache__"}
+    ignored_extensions = {".ico", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
+
+    for item in response.json():
+        name = item['name']
+        item_path = item['path']
+
+        # Skip ignored folders
+        if item['type'] == 'dir' and any(part in ignored_dirs for part in item_path.split('/')):
+            continue
+
+        # Skip ignored files
+        if item['type'] == 'file' and any(name.lower().endswith(ext) for ext in ignored_extensions):
+            continue
+
+        if item['type'] == 'file':
+            file_response = requests.get(item['download_url'], headers=headers)
+            if file_response.status_code == 200:
+                collected_files.append({
+                    'file_name': name,
+                    'file_path': item_path,
+                    'content': file_response.text
+                })
+
+        elif item['type'] == 'dir':
+            fetch_all_files_recursively(owner, repo, item_path, headers, collected_files)
+
+
 class GetRepoData(APIView):
-    permission_classes = [IsAuthenticated]  # Protect this view
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, owner, repo):
         try:
-            # Fetch GitHub access token
             github_user = request.user.social_auth.get(provider='github')
             access_token = github_user.extra_data['access_token']
-        except Exception as e:
+        except Exception:
             return Response({'error': 'GitHub account not linked'}, status=400)
 
-        # URL to get the contents of the repository
-        url = f'https://api.github.com/repos/{owner}/{repo}/contents'
         headers = {'Authorization': f'token {access_token}'}
+        all_files_content = []
 
-        # Fetch all files from the repository
-        response = requests.get(url, headers=headers)
+        fetch_all_files_recursively(owner, repo, "", headers, all_files_content)
+        return Response(all_files_content)
 
-        if response.status_code == 200:
-            repo_contents = response.json()
-
-            # Initialize a list to store file data
-            all_files_content = []
-
-            # Loop through each item (file or directory) in the repo
-            for item in repo_contents:
-                if item['type'] == 'file':
-                    # If it's a file, fetch its content
-                    file_response = requests.get(item['download_url'], headers=headers)
-                    if file_response.status_code == 200:
-                        file_content = file_response.text
-                        all_files_content.append({
-                            'file_name': item['name'],
-                            'file_path': item['path'],
-                            'content': file_content
-                        })
-
-            return Response(all_files_content)
-        else:
-            return Response({'error': 'Repo not found or unauthorized access'}, status=response.status_code)
 
     
 
@@ -106,24 +119,76 @@ class GetAllReposView(APIView):
 
 
 class LlamaModelView(APIView):
-
     def post(self, request):
-        # Get the input data from the request
         prompt = request.data.get('prompt')
         if not prompt:
             return Response({'error': 'No prompt provided'}, status=400)
 
         try:
-            # Interact with the LLaMA model
-            model_response = ollama.chat(model='llama3.2:3b', messages=[{'role': 'user', 'content': prompt}])
-
-            # Access the message content in the response
-            response_content = model_response.get('message', {}).get('content', None)
-
-            if response_content:
-                return Response({'response': response_content})
-            else:
-                return Response({'error': 'No content in response'}, status=500)
-        
+            model_response = ollama.chat(
+                model='llama3',
+                messages=[{'role': 'user', 'content': prompt}]
+            )
+            content = model_response.get('message', {}).get('content', None)
+            if content:
+                return Response({'response': content})
+            return Response({'error': 'No content in response'}, status=500)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
+
+
+
+class CommitReadmeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, owner, repo):
+        readme_content = request.data.get('content')
+        if not readme_content:
+            return Response({'error': 'No content provided'}, status=400)
+
+        try:
+            github_user = request.user.social_auth.get(provider='github')
+            access_token = github_user.extra_data['access_token']
+        except Exception:
+            return Response({'error': 'GitHub account not linked'}, status=400)
+
+        headers = {
+            'Authorization': f'token {access_token}',
+            'Accept': 'application/vnd.github.v3+json'
+        }
+
+        get_url = f'https://api.github.com/repos/{owner}/{repo}/contents/README.md'
+        get_response = requests.get(get_url, headers=headers)
+
+        sha = None
+        if get_response.status_code == 200:
+            sha = get_response.json().get('sha')
+
+        encoded_content = base64.b64encode(readme_content.encode()).decode()
+
+        payload = {
+            "message": "created with readmegen",
+            "content": encoded_content,
+            "branch": "main"  # Change this to actual branch if not main
+        }
+        if sha:
+            payload["sha"] = sha
+
+        commit_url = f'https://api.github.com/repos/{owner}/{repo}/contents/README.md'
+
+        # Debug
+        print("PUT URL:", commit_url)
+        print("Payload:", json.dumps(payload, indent=2))
+        print("Headers:", headers)
+
+        commit_response = requests.put(commit_url, headers=headers, json=payload)
+
+        if commit_response.status_code in [200, 201]:
+            return Response({'status': 'README committed'})
+        else:
+            print("GitHub Commit Error:", commit_response.status_code)
+            print(commit_response.json())
+            return Response({
+                'error': 'Failed to commit README',
+                'details': commit_response.json()
+            }, status=500)

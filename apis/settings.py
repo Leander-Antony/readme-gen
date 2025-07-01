@@ -51,6 +51,7 @@ AUTHENTICATION_BACKENDS = (
 
 SOCIAL_AUTH_GITHUB_KEY = 'Ov23lij5u9TVAbDgJdBn'
 SOCIAL_AUTH_GITHUB_SECRET = '31ac084f9da86630ac211d1036363312f617ef2a'
+SOCIAL_AUTH_GITHUB_SCOPE = ['repo']
 
 # Optional URL settings for OAuth
 SOCIAL_AUTH_GITHUB_CALLBACK_URL = 'http://127.0.0.1:8000/auth/complete/github/'   #Important: your callback url.
