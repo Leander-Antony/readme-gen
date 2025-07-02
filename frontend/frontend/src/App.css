@@ -1,4 +1,3 @@
-/* Login Page */
 .login-container {
   display: flex;
   justify-content: center;
@@ -10,22 +9,52 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
 }
 
+.login-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55); /* dark overlay */
+  backdrop-filter: blur(5px);
+  z-index: 1;
+}
 
-.login-container button {
+.login-box {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 40px 60px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.login-box h1 {
+  margin-bottom: 20px;
+  font-size: 2.2em;
+  color: #80d8ff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.login-box button {
   padding: 1em 2em;
   background-color: #333;
-  border: 2px solid #646cff;
+  border: 2px solid #80d8ff;
   color: #80d8ff;
   font-size: 1.2em;
   border-radius: 10px;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-.login-container button:hover {
-  background-color: #646cff;
-  color: #fff;
+.login-box button:hover {
+  background-color: #80d8ff;
+  color: #121212;
 }
 
 /* Repo List Page */

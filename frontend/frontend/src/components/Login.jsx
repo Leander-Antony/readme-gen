@@ -9,8 +9,13 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      <button onClick={handleGithubLogin}>Login with GitHub</button>
-    </div>
+  <div className="login-box">
+    <h1>ReadmeGen</h1>
+    <p>Create your readme files in seconds</p>
+    <button onClick={handleGithubLogin}>Login with GitHub</button>
+  </div>
+</div>
+
   );
 };
 

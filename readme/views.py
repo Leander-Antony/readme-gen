@@ -8,10 +8,14 @@ from rest_framework.authtoken.models import Token # Import Token mod
 import ollama
 import base64
 import json
+from rest_framework.permissions import AllowAny
 
 class GithubLoginView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, *args, **kwargs):
         return redirect('social:begin', backend='github')
+
 
 # class GithubLoginDoneView(APIView):
 #     def get(self, request, *args, **kwargs):
@@ -23,16 +27,15 @@ class GithubLoginView(APIView):
 
 
 class GithubLoginDoneView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, *args, **kwargs):
         user = request.user
         if user.is_authenticated:
             token, created = Token.objects.get_or_create(user=user)
-            print(f'Token: {token.key}')  # Debugging to see if token is created
-            response = redirect('http://localhost:5173/repos')  # React frontend URL
-            response = redirect(f'http://localhost:5173/repos?token={token.key}')
-            return response
-
+            return redirect(f'http://localhost:5173/repos?token={token.key}')
         return Response({'error': 'Authentication failed'}, status=400)
+
 
 
 
